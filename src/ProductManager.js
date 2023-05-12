@@ -98,3 +98,4 @@ const remainingProducts = productManager.getProducts();
 console.log(remainingProducts);
   
 
+module.exports = ProductManager;
