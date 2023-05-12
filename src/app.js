@@ -1,100 +1,49 @@
-//________________________________________________________________________________________________________________________________________________________
-//_____________________________________________ENTREGA DE Clases con ECMAScript y ECMAScript avanzado_____________________________________________________
- //____________________________________________________________y Manejo de archivos_______________________________________________________________________
-//________________________________________________________________________________________________________________________________________________________
+const express = require('express');
+const ProductManager = require('./ProductManager');
 
-// class ProductManager {
-//     constructor() {
-//       // Array para almacenar los productos
-//       this.products = []; 
-//       // Siguiente ID para asignar a los productos
-//       this.nextId = 1; 
-//     }
-  
-//     addProduct(title, description, price, thumbnail, code, stock) {
-//       // Validar que todos los campos sean obligatorios
-//       if (!title || !description || !price || !thumbnail || !code || !stock) {
-//         console.log("Todos los campos son obligatorios.");
-//         return;
-//       }
-  
-//       // Validar que no se repita el campo "code"
-//       const existingProduct = this.products.find(product => product.code === code);
-//       if (existingProduct) {
-//         console.log(`Ya existe un producto con el código ${code}.`);
-//         return;
-//       }
-  
-//       // Asignar un ID autoincrementable al producto
-//       const product = {
-//         id: this.nextId,
-//         title,
-//         description,
-//         price,
-//         thumbnail,
-//         code,
-//         stock
-//       };
-//       this.nextId++;
-//       // Agregar el producto al conjunto
-//       this.products.push(product); 
-//     }
-//     // Devolver el arreglo con todos los productos
-//     getProducts() {
-//       return this.products; 
-//     }
-  
-//     getProductById(id) {
-//       const product = this.products.find(product => product.id === id);
-//       if (product) {
-//         // Devolver el producto si se encuentra
-//         return product; 
-//       } else {
-//         // Mostrar error si no se encuentra el producto
-//         console.log("Not found"); 
-//         // Devolver null para indicar que el producto no se encontró
-//         return null; 
-//       }
-//     }
+const app = express();
+const productManager = new ProductManager();
 
-//     deleteProduct(id) {
-//       const index = this.products.findIndex(product => product.id === id);
-//       if (index !== -1) {
-//         this.products.splice(index, 1);
-//         console.log(`Producto con ID ${id} eliminado.`);
-//       } else {
-//         console.log("Not found"); // Mostrar error si no se encuentra el producto
-//       }
-//     }
+// Endpoint para obtener productos
+app.get('/products', async (req, res) => {
+  try {
+    // Obtener el valor del parámetro de límite
+    const limit = req.query.limit; 
+    const products = await productManager.getProducts();
 
-//   }
-  
-//   // Ejemplo de uso
-//   const productManager = new ProductManager();
-  
-//   // Agregar productos al ProductManager
-//   productManager.addProduct("Product 1", "Description of Product 1", 10.99, "path/to/image1.jpg", "P001", 50);
-//   productManager.addProduct("Product 2", "Description of Product 2", 19.99, "path/to/image2.jpg", "P002", 25);
-//   productManager.addProduct("Product 3", "Description of Product 3", 5.99, "path/to/image3.jpg", "P003", 100);
-  
-//   // Obtener un producto por su ID
+    if (limit) {
+      const limitedProducts = products.slice(0, limit);
+      res.json(limitedProducts);
+    } else {
+      res.json(products);
+    }
+  } catch (error) {
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
 
-//   const product = productManager.getProductById(2);
-//   console.log(product);
-  
-//   // Intentar obtener un producto inexistente por su ID
+// Endpoint para obtener un producto por ID
+app.get('/products/:pid', async (req, res) => {
+  try {
+    const productId = parseInt(req.params.pid);
+    const product = await productManager.getProductById(productId);
 
-//   const nonexistentProduct = productManager.getProductById(5);
+    if (product) {
+      res.json(product);
+    } else {
+      res.status(404).json({ error: 'Not found' });
+    }
+  } catch (error) {
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
 
 
-//   // Eliminar un producto por su ID
-// productManager.deleteProduct(2);
 
-// // Obtener todos los productos después de la eliminación
-// const remainingProducts = productManager.getProducts();
-// console.log(remainingProducts);
-  
-//_________________________________________________________________________________________________________________________________________________________
-//_____________________________________________ENTREGA DE _______________________________________________________________________________
-//_________________________________________________________________________________________________________________________________________________________
 
+
+
+// Iniciar el servidor
+app.listen(3000, () => {
+  console.log('Servidor Express iniciado en el puerto 3000');
+});
