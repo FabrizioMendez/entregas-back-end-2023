@@ -1,49 +1,22 @@
 const express = require('express');
 const ProductManager = require('./ProductManager');
+const productRoutes = require('./routes/products');
+const cartRoutes = require('./routes/carts');
 
 const app = express();
 const productManager = new ProductManager();
 
-// Endpoint para obtener productos
-app.get('/products', async (req, res) => {
-  try {
-    // Obtener el valor del parámetro de límite
-    const limit = req.query.limit; 
-    const products = await productManager.getProducts();
+// Middleware para procesar datos en formato JSON
+app.use(express.json());
 
-    if (limit) {
-      const limitedProducts = products.slice(0, limit);
-      res.json(limitedProducts);
-    } else {
-      res.json(products);
-    }
-  } catch (error) {
-    res.status(500).json({ error: 'Internal Server Error' });
-  }
-});
+// Rutas de productos
+app.use('/api/products', productRoutes);
 
-// Endpoint para obtener un producto por ID
-app.get('/products/:pid', async (req, res) => {
-  try {
-    const productId = parseInt(req.params.pid);
-    const product = await productManager.getProductById(productId);
-
-    if (product) {
-      res.json(product);
-    } else {
-      res.status(404).json({ error: 'Not found' });
-    }
-  } catch (error) {
-    res.status(500).json({ error: 'Internal Server Error' });
-  }
-});
-
-
-
-
-
+// Rutas de carritos
+app.use('/api/carts', cartRoutes);
 
 // Iniciar el servidor
-app.listen(3000, () => {
-  console.log('Servidor Express iniciado en el puerto 3000');
+const port = 8080;
+app.listen(port, () => {
+  console.log(`Servidor Express iniciado en el puerto ${port}`);
 });

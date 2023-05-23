@@ -1,101 +1,91 @@
-//________________________________________________________________________________________________________________________________________________________
-//_________________________________________________________________________________________________________________________________________________________
-//_____________________________________________ENTREGA DE Servidor con Express _______________________________________________________________________________
-//_________________________________________________________________________________________________________________________________________________________
-const express = require('express')
-
-
+const fs = require('fs').promises;
 
 class ProductManager {
-    constructor() {
-      // Array para almacenar los productos
-      this.products = []; 
-      // Siguiente ID para asignar a los productos
-      this.nextId = 1; 
-    }
-  
-    addProduct(title, description, price, thumbnail, code, stock) {
-      // Validar que todos los campos sean obligatorios
-      if (!title || !description || !price || !thumbnail || !code || !stock) {
-        console.log("Todos los campos son obligatorios.");
-        return;
-      }
-  
-      // Validar que no se repita el campo "code"
-      const existingProduct = this.products.find(product => product.code === code);
-      if (existingProduct) {
-        console.log(`Ya existe un producto con el código ${code}.`);
-        return;
-      }
-  
-      // Asignar un ID autoincrementable al producto
-      const product = {
-        id: this.nextId,
-        title,
-        description,
-        price,
-        thumbnail,
-        code,
-        stock
-      };
-      this.nextId++;
-      // Agregar el producto al conjunto
-      this.products.push(product); 
-    }
-    // Devolver el arreglo con todos los productos
-    getProducts() {
-      return this.products; 
-    }
-  
-    getProductById(id) {
-      const product = this.products.find(product => product.id === id);
-      if (product) {
-        // Devolver el producto si se encuentra
-        return product; 
-      } else {
-        // Mostrar error si no se encuentra el producto
-        console.log("Not found"); 
-        // Devolver null para indicar que el producto no se encontró
-        return null; 
-      }
-    }
-
-    deleteProduct(id) {
-      const index = this.products.findIndex(product => product.id === id);
-      if (index !== -1) {
-        this.products.splice(index, 1);
-        console.log(`Producto con ID ${id} eliminado.`);
-      } else {
-        console.log("Not found"); // Mostrar error si no se encuentra el producto
-      }
-    }
-
+  constructor(filePath) {
+    this.filePath = filePath;
   }
-  
-  // Ejemplo de uso
-  const productManager = new ProductManager();
-  
-  // Agregar productos al ProductManager
-  productManager.addProduct("Product 1", "Description of Product 1", 10.99, "path/to/image1.jpg", "P001", 50);
-  productManager.addProduct("Product 2", "Description of Product 2", 19.99, "path/to/image2.jpg", "P002", 25);
-  productManager.addProduct("Product 3", "Description of Product 3", 5.99, "path/to/image3.jpg", "P003", 100);
-  
-  // Obtener un producto por su ID
 
-  const product = productManager.getProductById(2);
-  console.log(product);
-  
-  // Intentar obtener un producto inexistente por su ID
+  async getProducts() {
+    try {
+      const data = await fs.readFile(this.filePath, 'utf-8');
+      return JSON.parse(data);
+    } catch (error) {
+      console.error('Error al leer el archivo de productos:', error);
+      return [];
+    }
+  }
 
-  const nonexistentProduct = productManager.getProductById(5);
+  async getProductById(id) {
+    try {
+      const products = await this.getProducts();
+      return products.find(product => product.id === id);
+    } catch (error) {
+      console.error('Error al obtener el producto por ID:', error);
+      return null;
+    }
+  }
 
+  async addProduct(product) {
+    try {
+      const products = await this.getProducts();
+      product.id = this.generateProductId(products);
+      products.push(product);
+      await this.saveProducts(products);
+      return product;
+    } catch (error) {
+      console.error('Error al agregar el producto:', error);
+      return null;
+    }
+  }
 
-  // Eliminar un producto por su ID
-productManager.deleteProduct(2);
+  async updateProduct(product) {
+    try {
+      const products = await this.getProducts();
+      const index = products.findIndex(p => p.id === product.id);
+      if (index !== -1) {
+        products[index] = product;
+        await this.saveProducts(products);
+        return product;
+      }
+      return null;
+    } catch (error) {
+      console.error('Error al actualizar el producto:', error);
+      return null;
+    }
+  }
 
-// Obtener todos los productos después de la eliminación
-const remainingProducts = productManager.getProducts();
-console.log(remainingProducts);
-  
+  async deleteProduct(id) {
+    try {
+      const products = await this.getProducts();
+      const index = products.findIndex(product => product.id === id);
+      if (index !== -1) {
+        products.splice(index, 1);
+        await this.saveProducts(products);
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Error al eliminar el producto:', error);
+      return false;
+    }
+  }
+
+  generateProductId(products) {
+    const ids = products.map(product => product.id);
+    let newId = 1;
+    while (ids.includes(newId)) {
+      newId++;
+    }
+    return newId;
+  }
+
+  async saveProducts(products) {
+    try {
+      await fs.writeFile(this.filePath, JSON.stringify(products, null, 2));
+    } catch (error) {
+      console.error('Error al guardar los productos:', error);
+    }
+  }
+}
 
 module.exports = ProductManager;
