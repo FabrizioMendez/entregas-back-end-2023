@@ -14,7 +14,7 @@ import MongoStore from 'connect-mongo';
 const app = express();
 const port = 8080;
 connectMongo();
-const httpServer = app.listen(port, () => console.log(`Listening on port http://localhost:${port}/`));
+const httpServer = app.listen(port, () => console.log(`Listening on port http://localhosnpmt:${port}/`));
 const socketServer = new Server(httpServer);
 
 app.use(express.json());
